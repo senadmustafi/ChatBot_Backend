@@ -1,0 +1,51 @@
+services:
+  postgresdb:
+    image: postgres
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      - POSTGRES_USER=$DB_USER
+      - POSTGRES_PASSWORD=$DB_PASS
+      - POSTGRES_DB=$DB_NAME
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgres
+
+  backend:
+    depends_on:
+      - postgresdb
+    build: ./backend
+    image: "chatbot_demo/backend:${TAG}"
+    pull_policy: never
+    restart: unless-stopped
+    env_file: ./.env
+    ports:
+      - 3030:3030
+    environment:
+      - DB_HOST=postgresdb
+
+  init-db:
+    depends_on:
+      - postgresdb
+      - backend
+    env_file: ./.env
+    image: "chatbot_demo/backend:${TAG}"
+    pull_policy: never
+    command: npm run deploy
+    environment:
+      - DB_HOST=postgresdb
+
+  # frontend:
+  #   depends_on:
+  #     - backend
+  #   build: ./frontend
+  #   image: "chatbot_demo/frontend:${TAG}"
+  #   pull_policy: never
+  #   restart: unless-stopped
+  #   env_file: ./.env
+  #   ports:
+  #     - 3000:3000
+
+volumes: 
+  db:
